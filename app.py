@@ -1,6 +1,6 @@
-# app.py
 import warnings
 warnings.filterwarnings("ignore")
+
 import streamlit as st
 from PIL import Image
 import numpy as np
@@ -9,475 +9,124 @@ from fer import FER
 import random
 import cv2
 
-# Streamlit setup
+# ------------------ PAGE CONFIG ------------------
 st.set_page_config(
-    page_title="Facial Emotion Detection", 
-    layout="centered",
+    page_title="Facial Emotion Detection",
     page_icon="😊",
-    initial_sidebar_state="expanded"
+    layout="centered"
 )
 
-# Custom CSS for sleek black theme
+# ------------------ CUSTOM STYLING ------------------
 st.markdown("""
 <style>
-    /* Main background with dark theme */
-    .stApp {
-        background: #0f0f0f;
-        min-height: 100vh;
-    }
-    
-    /* Main container with dark glass effect */
-    .main-container {
-        background: rgba(20, 20, 20, 0.8);
-        backdrop-filter: blur(20px);
-        border-radius: 20px;
-        padding: 2.5rem;
-        margin: 1rem;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    /* Sidebar dark effect */
-    .sidebar .sidebar-content {
-        background: rgba(20, 20, 20, 0.9) !important;
-        backdrop-filter: blur(20px);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    /* Header styling */
-    .main-header {
-        font-size: 3.5rem;
-        background: linear-gradient(90deg, #ffffff, #cccccc, #999999);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-align: center;
-        margin-bottom: 1rem;
-        font-weight: 800;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
-    
-    .sub-header {
-        text-align: center;
-        font-size: 1.3rem;
-        color: rgba(255, 255, 255, 0.8);
-        margin-bottom: 2rem;
-        font-weight: 500;
-    }
-    
-    /* Card styling with dark glass effect */
-    .glass-card {
-        background: rgba(30, 30, 30, 0.7);
-        backdrop-filter: blur(15px);
-        border-radius: 15px;
-        padding: 2rem;
-        margin: 1.5rem 0;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    }
-    
-    /* Quote box styling */
-    .quote-box {
-        background: linear-gradient(135deg, rgba(40, 40, 40, 0.9), rgba(60, 60, 60, 0.9));
-        padding: 2rem;
-        border-radius: 15px;
-        color: white;
-        margin: 1.5rem 0;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        text-align: center;
-        font-size: 1.2rem;
-        font-style: italic;
-    }
-    
-    /* Emotion result boxes */
-    .emotion-result {
-        text-align: center;
-        padding: 2rem;
-        border-radius: 15px;
-        margin: 1.5rem 0;
-        background: rgba(40, 40, 40, 0.8);
-        border-left: 6px solid;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .happy { 
-        border-color: #4CAF50; 
-        background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(40, 40, 40, 0.8));
-    }
-    .sad { 
-        border-color: #2196F3; 
-        background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(40, 40, 40, 0.8));
-    }
-    .angry { 
-        border-color: #f44336; 
-        background: linear-gradient(135deg, rgba(244, 67, 54, 0.15), rgba(40, 40, 40, 0.8));
-    }
-    .neutral { 
-        border-color: #9E9E9E; 
-        background: linear-gradient(135deg, rgba(158, 158, 158, 0.15), rgba(40, 40, 40, 0.8));
-    }
-    
-    /* Progress bar styling */
-    .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, #667eea, #764ba2);
-        border-radius: 8px;
-    }
-    
-    /* Button styling */
-    .stButton>button {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        padding: 0.7rem 2rem;
-        font-weight: 600;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-    }
-    
-    /* File uploader styling */
-    .uploadedFile {
-        background: rgba(40, 40, 40, 0.8);
-        border-radius: 12px;
-        padding: 1rem;
-        border: 2px dashed rgba(255, 255, 255, 0.2);
-    }
-    
-    /* Radio button styling */
-    .stRadio > div {
-        background: rgba(40, 40, 40, 0.8);
-        padding: 1.5rem;
-        border-radius: 12px;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    /* Text input styling */
-    .stTextInput>div>div>input {
-        background: rgba(40, 40, 40, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
-        border-radius: 8px;
-    }
-    
-    /* Chart background */
-    .stPlotlyChart {
-        background: rgba(40, 40, 40, 0.8);
-        border-radius: 12px;
-        padding: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    /* Custom styling for text elements */
-    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
-        color: white !important;
-    }
-    
-    .stMarkdown p, .stMarkdown div {
-        color: rgba(255, 255, 255, 0.9) !important;
-    }
-    
-    /* Camera input styling */
-    .stCameraInput {
-        border-radius: 15px;
-        overflow: hidden;
-    }
-    
-    /* File uploader label */
-    .stFileUploader label {
-        color: white !important;
-    }
-    
-    /* Radio button labels */
-    .stRadio label {
-        color: white !important;
-    }
+.stApp { background-color: #0f0f0f; }
+.main-title { text-align:center; font-size:3rem; color:white; }
+.subtitle { text-align:center; color:gray; margin-bottom:20px; }
+.card {
+    background: rgba(30,30,30,0.9);
+    padding: 25px;
+    border-radius: 15px;
+    margin-top: 20px;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# Main content container
-st.markdown('<div class="main-container">', unsafe_allow_html=True)
+# ------------------ TITLE ------------------
+st.markdown("<h1 class='main-title'>😊 Facial Emotion Detection</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Upload an image or use webcam to detect emotions</p>", unsafe_allow_html=True)
 
-# Header Section
-st.markdown('<h1 class="main-header">😊 Facial Emotion Detection</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Upload an image or use your webcam. The app detects emotion and shows a random quote to refresh your mind.</p>', unsafe_allow_html=True)
-
-# --- Quotes dictionary ---
+# ------------------ EMOTION QUOTES ------------------
 QUOTES = {
-    "happy": [
-        "The purpose of our lives is to be happy. — Dalai Lama",
-        "Happiness is not something ready made. It comes from your own actions. — Dalai Lama",
-        "For every minute you are angry you lose sixty seconds of happiness. — Emerson",
-        "Happiness depends upon ourselves. — Aristotle",
-        "Do more of what makes you happy.",
-        "Enjoy your life—it's all that matters. — Audrey Hepburn"
-    ],
-    "sad": [
-        "Tough times never last, but tough people do. — Schuller",
-        "This too shall pass.",
-        "Sometimes when you're in a dark place you've been planted. — Christine Caine",
-        "The darker the night, the brighter the stars. — Dostoyevsky",
-        "It's okay to not be okay.",
-        "You are allowed to feel messed up and inside out."
-    ],
-    "angry": [
-        "For every minute you remain angry, you give up sixty seconds of peace. — Emerson",
-        "Speak when you are angry and you'll make the best speech you regret. — Bierce",
-        "You don't have to control your emotions, just don't let them control you.",
-        "Anger is an acid that harms its vessel. — Mark Twain",
-        "Keep calm and let wise choices lead you.",
-        "The best fighter is never angry. — Lao Tzu"
-    ],
-    "neutral": [
-        "Breathe. It's only a bad day, not a bad life.",
-        "Stay present. Everything else can wait.",
-        "Balance is not something you find, it's something you create.",
-        "Calmness is the cradle of power. — Josiah Holland",
-        "Rest, reflect, renew.",
-        "Small steps every day."
-    ],
+    "happy": ["Happiness is a journey, not a destination."],
+    "sad": ["Every storm runs out of rain."],
+    "angry": ["Anger fades, calmness stays."],
+    "fear": ["Courage starts with facing fear."],
+    "surprise": ["Life is full of beautiful surprises."],
+    "disgust": ["Trust yourself and stay positive."],
+    "neutral": ["Stay calm and move forward."]
 }
 
-# --- Helper functions ---
-def get_random_quote(emotion_label):
-    lst = QUOTES.get(emotion_label, QUOTES["neutral"])
-    return random.choice(lst)
+# ------------------ EMOTION ICONS ------------------
+EMOJI = {
+    "happy": "😊",
+    "sad": "😢",
+    "angry": "😠",
+    "fear": "😨",
+    "surprise": "😲",
+    "disgust": "🤢",
+    "neutral": "😐"
+}
+
+# ------------------ FUNCTIONS ------------------
+def get_random_quote(emotion):
+    return random.choice(QUOTES.get(emotion, QUOTES["neutral"]))
 
 def map_emotion(raw_emotion):
-    raw = raw_emotion.lower()
-    if raw in ["angry", "disgust"]:
-        return "angry"
-    if raw in ["sad"]:
-        return "sad"
-    if raw in ["happy"]:
-        return "happy"
-    if raw in ["neutral", "surprise"]:
-        return "neutral"
-    if raw in ["fear"]:
-        return "sad"
-    return "neutral"
+    return raw_emotion.lower()   # ✅ Correct mapping
 
-# --- Sidebar with dark styling ---
-st.sidebar.markdown("""
-<div style='background: linear-gradient(135deg, rgba(40, 40, 40, 0.9), rgba(60, 60, 60, 0.9)); padding: 1.5rem; border-radius: 12px; color: white; text-align: center; margin-bottom: 1rem;'>
-    <h3 style='margin:0;'>🎯 Input Method</h3>
-</div>
-""", unsafe_allow_html=True)
+# ------------------ SIDEBAR ------------------
+st.sidebar.title("🎯 Input Method")
+option = st.sidebar.radio("Choose Input:", ["Upload Image", "Webcam"])
 
-input_method = st.sidebar.radio("Choose input:", ("Upload Image", "Webcam (Camera)"), label_visibility="collapsed")
-
-# Add some spacing
-st.sidebar.markdown("<br>", unsafe_allow_html=True)
-
-# Instructions in sidebar
-st.sidebar.markdown("""
-<div style='background: rgba(40, 40, 40, 0.8); padding: 1.5rem; border-radius: 12px; border-left: 4px solid #667eea; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);'>
-    <h4 style='margin-top:0; color: white;'>💡 Tips for best results:</h4>
-    <ul style='margin-bottom:0; color: rgba(255,255,255,0.8);'>
-        <li>Ensure good lighting</li>
-        <li>Face the camera directly</li>
-        <li>Remove sunglasses/hats</li>
-        <li>Use a clear, high-quality image</li>
-    </ul>
-</div>
-""", unsafe_allow_html=True)
-
-# --- Main content area ---
+# ------------------ IMAGE INPUT ------------------
 image = None
 
-st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+if option == "Upload Image":
+    uploaded = st.file_uploader("Upload Image", type=["jpg", "jpeg", "png"])
+    if uploaded:
+        image = Image.open(uploaded).convert("RGB")
 
-if input_method == "Upload Image":
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown("### 📁 Upload Image")
-        uploaded_file = st.file_uploader("Choose an image file (jpg/png)", type=["jpg", "jpeg", "png"], 
-                                        help="Choose a clear image with a visible face", label_visibility="collapsed")
-        if uploaded_file:
-            image = Image.open(uploaded_file).convert("RGB")
+elif option == "Webcam":
+    cam = st.camera_input("Take a photo")
+    if cam:
+        image = Image.open(cam).convert("RGB")
 
-elif input_method == "Webcam (Camera)":
-    col1, col2, col3 = st.columns([1, 3, 1])
-    with col2:
-        st.markdown("### 📸 Webcam Capture")
-        st.markdown("<p style='text-align: center; color: rgba(255,255,255,0.8);'>Position your face in the center and click the photo</p>", 
-                   unsafe_allow_html=True)
-        cam_image = st.camera_input("Take a picture", label_visibility="collapsed")
-        if cam_image:
-            image = Image.open(cam_image).convert("RGB")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- Detection ---
+# ------------------ PROCESS IMAGE ------------------
 if image is not None:
-    # Display uploaded image in a card-like container
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown("### 📷 Your Image")
-        st.image(image, use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Progress bar for detection
-    with st.spinner("🔍 Analyzing facial expression..."):
-        progress_bar = st.progress(0)
-        for i in range(100):
-            progress_bar.progress(i + 1)
-        
+
+    st.image(image, caption="Input Image", use_container_width=True)
+
+    with st.spinner("Analyzing Emotion..."):
         detector = FER(mtcnn=True)
-        
-        try:
-            results = detector.detect_emotions(np.array(image))
-            if not results:
-                st.markdown("""
-                <div style='background: rgba(40, 40, 40, 0.8); padding: 2rem; border-radius: 15px; text-align: center; border-left: 5px solid #ff6b6b; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);'>
-                    <h2 style='color: white;'>❌ No Face Detected</h2>
-                    <p style='color: rgba(255,255,255,0.8);'>Try another image with better lighting or ensure your face is clearly visible</p>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                # Pick the most prominent face
-                def box_area(box): x, y, w, h = box; return w * h
-                main = max(results, key=lambda r: box_area(r["box"]))
-                emotions = main["emotions"]
-                sorted_em = sorted(emotions.items(), key=lambda x: x[1], reverse=True)
-                raw_emotion, raw_score = sorted_em[0]
-                mapped = map_emotion(raw_emotion)
-                
-                # Emotion result with colored styling
-                emotion_icons = {
-                    "happy": "😊", 
-                    "sad": "😢", 
-                    "angry": "😠", 
-                    "neutral": "😐"
-                }
-                
-                st.markdown(f"""
-                <div class='emotion-result {mapped}'>
-                    <h2 style='color: white;'>{emotion_icons[mapped]} Detected Emotion: <strong>{mapped.title()}</strong></h2>
-                    <p style='color: rgba(255,255,255,0.8); font-size: 1.2rem;'>Raw emotion: {raw_emotion} (confidence: {raw_score:.2f})</p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Chart with dark styling
-                st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-                st.markdown("### 📊 Emotion Analysis")
-                labels = [k.title() for k, _ in sorted_em]
-                scores = [v for _, v in sorted_em]
-                
-                # Create a dark-themed chart
-                fig, ax = plt.subplots(figsize=(10, 6))
-                fig.patch.set_facecolor('#0f0f0f')
-                ax.set_facecolor('#1a1a1a')
-                colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFE66D', '#6A0572', '#AB83A1']
-                bars = ax.barh(labels[::-1], scores[::-1], color=colors[:len(labels)])
-                ax.set_xlim(0, 1)
-                ax.set_xlabel("Confidence Score", fontsize=12, color='white')
-                ax.set_ylabel("Emotions", fontsize=12, color='white')
-                ax.set_title("Emotion Probability Distribution", fontsize=14, fontweight='bold', color='white')
-                ax.grid(axis='x', alpha=0.3)
-                ax.tick_params(colors='white')
-                
-                # Set spine colors
-                for spine in ax.spines.values():
-                    spine.set_color('white')
-                    spine.set_alpha(0.3)
-                
-                # Add value labels on bars
-                for bar in bars:
-                    width = bar.get_width()
-                    ax.text(width + 0.01, bar.get_y() + bar.get_height()/2, 
-                           f'{width:.2f}', ha='left', va='center', fontweight='bold', color='white')
-                
-                plt.tight_layout()
-                st.pyplot(fig)
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Quote in styled box
-                st.markdown("### 💫 Quote for You")
-                quote = get_random_quote(mapped)
-                st.markdown(f'<div class="quote-box">{quote}</div>', unsafe_allow_html=True)
-                
-                # Bounding box visualization
-                st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-                st.markdown("### 👁️ Face Detection")
-                x, y, w, h = main["box"]
-                img_copy = np.array(image).copy()
-                # Enhanced bounding box
-                cv2.rectangle(img_copy, (x, y), (x + w, y + h), (0, 255, 0), 3)
-                # Add label
-                cv2.putText(img_copy, f'{mapped.title()} ({raw_score:.2f})', 
-                           (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                
-                col1, col2, col3 = st.columns([1, 2, 1])
-                with col2:
-                    st.image(img_copy, caption="Detected Face with Emotion", use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-                    
-        except Exception as e:
-            st.markdown(f"""
-            <div style='background: rgba(40, 40, 40, 0.8); padding: 2rem; border-radius: 15px; text-align: center; border-left: 5px solid #ff6b6b; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1);'>
-                <h2 style='color: white;'>⚠️ Processing Error</h2>
-                <p style='color: rgba(255,255,255,0.8);'>Details: {e}</p>
-                <p style='color: rgba(255,255,255,0.8);'>Please try with a different image.</p>
-            </div>
-            """, unsafe_allow_html=True)
+        result = detector.detect_emotions(np.array(image))
+
+    if not result:
+        st.error("No face detected. Try again with better lighting.")
+    else:
+        face = max(result, key=lambda x: x["box"][2] * x["box"][3])
+        emotions = face["emotions"]
+
+        dominant_emotion = max(emotions, key=emotions.get)
+        confidence = emotions[dominant_emotion]
+
+        mapped = map_emotion(dominant_emotion)
+
+        # -------- Display Result --------
+        st.markdown("## 🎯 Detected Emotion")
+        st.success(f"{EMOJI[mapped]} **{mapped.upper()}**  (Confidence: {confidence:.2f})")
+
+        # -------- Emotion Chart --------
+        st.markdown("### 📊 Emotion Probability")
+        fig, ax = plt.subplots()
+        ax.barh(list(emotions.keys()), list(emotions.values()))
+        ax.set_xlabel("Confidence")
+        ax.set_title("Emotion Distribution")
+        st.pyplot(fig)
+
+        # -------- Quote --------
+        st.markdown("### 💬 Motivation")
+        st.info(get_random_quote(mapped))
+
+        # -------- Bounding Box --------
+        x, y, w, h = face["box"]
+        img = np.array(image)
+        cv2.rectangle(img, (x,y), (x+w,y+h), (0,255,0), 2)
+        cv2.putText(img, mapped.upper(), (x, y-10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0,255,0), 2)
+
+        st.markdown("### 🧠 Face Detection")
+        st.image(img, use_container_width=True)
 
 else:
-    # Welcome state with features
-    st.markdown("""
-    <div style='text-align: center; padding: 3rem 2rem; background: rgba(30, 30, 30, 0.7); border-radius: 20px; margin: 2rem 0; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1);'>
-        <h2 style='color: white;'>🎭 Ready to Discover Your Emotions?</h2>
-        <p style='font-size: 1.2rem; color: rgba(255,255,255,0.8); max-width: 600px; margin: 0 auto;'>
-            Upload a photo or use your webcam to detect facial emotions and get personalized quotes!
-        </p>
-        <div style='display: flex; justify-content: center; gap: 3rem; margin-top: 3rem; flex-wrap: wrap;'>
-            <div style='text-align: center; color: white;'>
-                <div style='font-size: 3rem;'>📁</div>
-                <strong style='font-size: 1.2rem;'>Upload Image</strong>
-                <p style='font-size: 1rem; color: rgba(255,255,255,0.7);'>JPG, PNG formats</p>
-            </div>
-            <div style='text-align: center; color: white;'>
-                <div style='font-size: 3rem;'>📸</div>
-                <strong style='font-size: 1.2rem;'>Webcam Capture</strong>
-                <p style='font-size: 1rem; color: rgba(255,255,255,0.7);'>Real-time detection</p>
-            </div>
-            <div style='text-align: center; color: white;'>
-                <div style='font-size: 3rem;'>💬</div>
-                <strong style='font-size: 1.2rem;'>Get Quotes</strong>
-                <p style='font-size: 1rem; color: rgba(255,255,255,0.7);'>Personalized messages</p>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.info("👆 Upload an image or use webcam to begin.")
 
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style='text-align: center; color: rgba(255,255,255,0.7);'>
-    <p style='font-size: 1.1rem;'>Built with ❤️ using Streamlit & FER | Emotion Detection AI</p>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("""
-<div style='text-align: center; color: rgba(255,255,255,0.7); font-size: 0.9rem;'>
-    <p>Using pretrained FER model (mtcnn=True)</p>
-</div>
-""", unsafe_allow_html=True)
-
-st.sidebar.markdown("<br><br>", unsafe_allow_html=True)
-st.sidebar.markdown("""
-<div style='text-align: center; color: rgba(255,255,255,0.5); font-size: 0.8rem;'>
-    <p>✨ Dark Theme Emotion Detection ✨</p>
-</div>
-""", unsafe_allow_html=True)
