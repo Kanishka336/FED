@@ -1,6 +1,6 @@
 😊 Facial Emotion Detection System
 
-A Facial Emotion Detection Web Application built using Python, Streamlit, and FER (Facial Emotion Recognition).
+A Facial Emotion Detection a Machine Learning Web Application built using Python, Streamlit, and FER (Facial Emotion Recognition).
 The system detects human emotions from images or webcam input and displays emotion-based insights along with motivational quotes.
 
 📌 Project Overview
