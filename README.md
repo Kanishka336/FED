@@ -17,13 +17,13 @@ The application provides a clean and interactive interface where users can uploa
 
 🚀 Features:
 
-Upload image or use webcam
-Detects 7 human emotions
-Uses FER (Facial Emotion Recognition) with MTCNN
+Detects 7 human emotions (Happy, Sad, Angry, Fear, Surprise, Disgust, Neutral)
+Upload image or capture photo using webcam
+Face detection using MTCNN
+Emotion prediction using FER (CNN model)
 Displays emotion confidence graph
-Shows emotion-based motivational quotes
-Modern dark-themed UI
-Lightweight and easy to run
+Shows motivational quotes based on detected emotion
+Clean and simple dark-themed U
 
 🛠️ Technologies Used:
 
