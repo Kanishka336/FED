@@ -25,6 +25,7 @@ Displays emotion confidence graph
 Shows motivational quotes based on detected emotion
 Clean and simple dark-themed U
 
+
 🛠️ Technologies Used:
 
 Python-	Core programming
